@@ -166,13 +166,13 @@
     }
     .logout-btn {
       display: none; /* Hidden by default, shown when user is logged in */
-      padding: 0.5rem 1rem;
+      padding: 0.75rem;
       background: #dc3545;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      margin-top: 1rem;
+      margin-top: 0.5rem; /* Adjusted margin */
       transition: background 0.3s ease;
     }
     .logout-btn:hover {
@@ -241,9 +241,11 @@
     function toggleAuthVisibility(show) {
       authContainer.style.display = show ? 'flex' : 'none';
       if (!show) {
-        // Clear input fields when closing the auth box
+        // Clear input fields and reset mode when closing the auth box
         authEmailInput.value = '';
         authPasswordInput.value = '';
+        authPasswordInput.style.display = 'block'; // Ensure password input is visible for login/signup
+        authEmailInput.readOnly = false; // Ensure email input is editable
         isSignupMode = false; // Reset to sign-in mode
         authActionButton.innerText = 'Sign In';
         authToggleButton.innerText = "Don't have an account? Sign Up";
@@ -287,7 +289,7 @@
       } else if (data.user) {
         alert(`Successfully ${isSignupMode ? 'signed up' : 'signed in'} as ${data.user.email}!`);
         toggleAuthVisibility(false); // Hide auth container on success
-        // checkAdminAccess will be called by the onAuthStateChange listener
+        // updateAuthUI will be called by the onAuthStateChange listener
       } else {
          alert("Authentication failed. Please check your credentials or verify your email (if signed up).");
       }
@@ -303,7 +305,7 @@
       } else {
         alert('You have been logged out.');
         toggleAuthVisibility(false); // Hide auth container
-        // checkAdminAccess (via onAuthStateChange) will handle hiding upload box
+        // updateAuthUI (via onAuthStateChange) will handle UI changes
       }
     }
 
@@ -315,7 +317,6 @@
 
       if (error) {
         console.error('Error loading gallery images:', error.message);
-        // Optionally, display a user-friendly message
         galleryContainer.innerHTML = '<p style="text-align: center;">Failed to load images. Please try again later.</p>';
         return;
       }
@@ -364,6 +365,7 @@
 
     /**
      * Manages the UI based on the user's authentication status and admin privilege.
+     * This function is called by the auth state change listener and on initial load.
      * @param {object | null} user - The Supabase user object or null if logged out.
      */
     function updateAuthUI(user) {
@@ -373,14 +375,22 @@
         authToggleButton.style.display = 'none'; // Hide toggle button
         logoutButton.style.display = 'block'; // Show logout button
 
+        // Set email input to logged-in user's email and make it read-only
+        authEmailInput.value = user.email;
+        authEmailInput.readOnly = true;
+        authPasswordInput.style.display = 'none'; // Hide password input when logged in
+
         if (user.email === ADMIN_EMAIL) {
           uploadBox.style.display = 'block'; // Show upload box for admin
-          adminWarning.style.display = 'none'; // Hide warning for admin
-          authEmailInput.placeholder = "Email (admin)";
+          adminWarning.style.display = 'none'; // Hide admin warning for admin
+          adminWarning.innerHTML = 'Admin functions enabled.'; // Optional: change warning text
+          adminWarning.style.color = '#03DAC5'; // Optional: change color
+          adminWarning.style.display = 'block'; // Show it for admin status
         } else {
           uploadBox.style.display = 'none'; // Hide upload box for non-admin
+          adminWarning.innerHTML = 'Logged in. Only admin can upload.'; // Specific message
+          adminWarning.style.color = 'yellow';
           adminWarning.style.display = 'block'; // Show warning for non-admin
-          authEmailInput.placeholder = "Email";
         }
       } else {
         // User is logged out
@@ -390,26 +400,21 @@
         logoutButton.style.display = 'none'; // Hide logout button
         adminWarning.style.display = 'none'; // Hide warning when logged out
         authEmailInput.placeholder = "Email"; // Reset placeholder
+        authEmailInput.value = ''; // Clear email input
+        authEmailInput.readOnly = false; // Make email input editable
+        authPasswordInput.value = ''; // Clear password input
+        authPasswordInput.style.display = 'block'; // Show password input
       }
     }
 
     // Event Listeners
 
-    // Profile link to show auth container
+    // **IMPORTANT FIX**: Ensure profile link correctly opens the auth container
     profileLink.addEventListener('click', () => {
       toggleAuthVisibility(true);
-      // Ensure current user info is reflected when opening
+      // Immediately update UI inside auth box based on current user session
       supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          authEmailInput.value = user.email;
-          authEmailInput.readOnly = true; // Make email read-only if logged in
-          authPasswordInput.style.display = 'none'; // Hide password if logged in
-        } else {
-          authEmailInput.value = '';
-          authEmailInput.readOnly = false;
-          authPasswordInput.style.display = 'block';
-        }
-        updateAuthUI(user); // Update UI elements inside auth box
+        updateAuthUI(user);
       });
     });
 
@@ -431,18 +436,18 @@
     // Supabase Auth State Change Listener
     // This runs whenever the user's authentication state changes (login, logout, refresh, etc.)
     supabase.auth.onAuthStateChange((_event, session) => {
-      // _event can be 'SIGNED_IN', 'SIGNED_OUT', 'TOKEN_REFRESHED', 'USER_UPDATED'
-      updateAuthUI(session?.user || null); // Pass the user object or null
+      // session.user will be null if logged out
+      updateAuthUI(session?.user || null);
     });
 
     // Initial load: This code runs once when the DOM is ready.
     document.addEventListener('DOMContentLoaded', async () => {
-      // Load gallery images first
+      // Load gallery images immediately so it's public
       loadGalleryImages();
 
-      // Get the current user session to determine initial UI state
+      // Get the current user session to determine initial UI state for profile/upload
       const { data: { user } } = await supabase.auth.getUser();
-      updateAuthUI(user); // Update UI based on initial user state
+      updateAuthUI(user); // Update UI based on initial user state (e.g., show/hide upload box)
     });
   </script>
 </body>
