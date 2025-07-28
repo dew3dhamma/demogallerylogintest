@@ -625,6 +625,7 @@
                 <div class="auth-tabs">
                     <button class="auth-tab active" data-mode="login">Sign In</button>
                     <button class="auth-tab" data-mode="signup">Sign Up</button>
+                    <button class="auth-tab" data-mode="verify" style="display: none;">Verify OTP</button>
                 </div>
 
                 <form class="auth-form" id="authForm">
@@ -637,6 +638,18 @@
                         </div>
                     </div>
 
+                    <div id="otpFields" style="display: none;">
+                        <div class="form-group">
+                            <input type="email" id="otpEmail" placeholder="Email" readonly>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="otpCode" placeholder="Enter 6-digit code" maxlength="6" required>
+                        </div>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                            We've sent a 6-digit code to your email. Please enter it below.
+                        </p>
+                    </div>
+
                     <div class="form-group">
                         <input type="email" id="email" placeholder="Email" required>
                     </div>
@@ -646,6 +659,10 @@
                     </div>
 
                     <button type="submit" class="auth-submit" id="authSubmit">Sign In</button>
+                    
+                    <div id="resendOtp" style="display: none; margin-top: 15px;">
+                        <button type="button" class="post-action-btn" id="resendOtpBtn">Resend Code</button>
+                    </div>
                 </form>
 
                 <div class="auth-error" id="authError"></div>
@@ -715,9 +732,10 @@
         // Global state
         let currentUser = null;
         let currentProfile = null;
-        let isLoginMode = true;
+        let authMode = 'login'; // 'login', 'signup', 'verify'
         let posts = [];
         let likedPosts = new Set();
+        let pendingVerificationEmail = '';
 
         // DOM elements
         const loadingSection = document.getElementById('loadingSection');
@@ -919,20 +937,83 @@
         // Authentication form handling
         document.querySelectorAll('.auth-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
-                const mode = e.target.dataset.mode;
-                isLoginMode = mode === 'login';
+                authMode = e.target.dataset.mode;
                 
                 document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
                 e.target.classList.add('active');
                 
-                if (isLoginMode) {
+                updateAuthForm();
+            });
+        });
+
+        // Update auth form based on mode
+        function updateAuthForm() {
+            const signupFields = document.getElementById('signupFields');
+            const otpFields = document.getElementById('otpFields');
+            const emailField = document.getElementById('email').parentElement;
+            const passwordField = document.getElementById('password').parentElement;
+            const resendOtp = document.getElementById('resendOtp');
+            const authSubmit = document.getElementById('authSubmit');
+
+            // Hide all fields first
+            signupFields.style.display = 'none';
+            otpFields.style.display = 'none';
+            resendOtp.style.display = 'none';
+            emailField.style.display = 'block';
+            passwordField.style.display = 'block';
+
+            if (authMode === 'login') {
                     signupFields.style.display = 'none';
                     authSubmit.textContent = 'Sign In';
-                } else {
+            } else if (authMode === 'signup') {
                     signupFields.style.display = 'block';
                     authSubmit.textContent = 'Create Account';
+            } else if (authMode === 'verify') {
+                otpFields.style.display = 'block';
+                emailField.style.display = 'none';
+                passwordField.style.display = 'none';
+                resendOtp.style.display = 'block';
+                authSubmit.textContent = 'Verify Code';
+                
+                // Set the email in readonly field
+                document.getElementById('otpEmail').value = pendingVerificationEmail;
                 }
-            });
+        }
+
+        // Show verify tab and switch to it
+        function showVerifyTab(email) {
+            pendingVerificationEmail = email;
+            const verifyTab = document.querySelector('[data-mode="verify"]');
+            verifyTab.style.display = 'block';
+            verifyTab.click();
+        }
+
+        // Resend OTP
+        document.getElementById('resendOtpBtn').addEventListener('click', async () => {
+            if (!pendingVerificationEmail) return;
+
+            const resendBtn = document.getElementById('resendOtpBtn');
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Sending...';
+
+            try {
+                const { error } = await supabase.auth.resend({
+                    type: 'signup',
+                    email: pendingVerificationEmail
+                });
+
+                if (error) throw error;
+
+                successMessage.textContent = 'New code sent to your email!';
+                successMessage.style.display = 'block';
+                setTimeout(() => successMessage.style.display = 'none', 3000);
+            } catch (error) {
+                authError.textContent = error.message;
+                authError.style.display = 'block';
+            } finally {
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Resend Code';
+            }
         });
 
         // Auth form submission
@@ -946,17 +1027,26 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            if (!email || !password) {
+            // Validation based on mode
+            if (authMode === 'verify') {
+                const otpCode = document.getElementById('otpCode').value;
+                if (!otpCode || otpCode.length !== 6) {
+                    authError.textContent = 'Please enter a valid 6-digit code';
+                    authError.style.display = 'block';
+                    return;
+                }
+            } else if (!email || !password) {
                 authError.textContent = 'Please fill in all fields';
                 authError.style.display = 'block';
                 return;
             }
 
             authSubmit.disabled = true;
-            authSubmit.textContent = isLoginMode ? 'Signing In...' : 'Creating Account...';
+            authSubmit.textContent = authMode === 'login' ? 'Signing In...' : 
+                                   authMode === 'signup' ? 'Creating Account...' : 'Verifying...';
 
             try {
-                if (isLoginMode) {
+                if (authMode === 'login') {
                     // Sign in
                     const { data, error } = await supabase.auth.signInWithPassword({
                         email,
@@ -966,7 +1056,7 @@
                     if (error) {
                         throw new Error(error.message);
                     }
-                } else {
+                } else if (authMode === 'signup') {
                     // Sign up
                     const fullName = document.getElementById('fullName').value;
                     const username = document.getElementById('username').value;
@@ -982,7 +1072,8 @@
                             data: {
                                 full_name: fullName,
                                 username: username
-                            }
+                            },
+                            emailRedirectTo: undefined // Disable email links, use OTP only
                         }
                     });
 
@@ -991,21 +1082,41 @@
                     }
 
                     if (data.user && !data.session) {
-                        // Email confirmation required
-                        successMessage.textContent = 'Account created! Please check your email to confirm.';
+                        // OTP verification required
+                        successMessage.textContent = 'Account created! Please check your email for the verification code.';
                         successMessage.style.display = 'block';
                         
-                        // Clear form after showing success message
+                        // Switch to verify mode
                         setTimeout(() => {
-                            authForm.reset();
-                            // Switch to login mode
-                            isLoginMode = true;
-                            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                            document.querySelector('[data-mode="login"]').classList.add('active');
-                            signupFields.style.display = 'none';
-                            authSubmit.textContent = 'Sign In';
                             successMessage.style.display = 'none';
-                        }, 3000);
+                            showVerifyTab(email);
+                        }, 2000);
+                    }
+                } else if (authMode === 'verify') {
+                    // Verify OTP
+                    const otpCode = document.getElementById('otpCode').value;
+                    
+                    const { data, error } = await supabase.auth.verifyOtp({
+                        email: pendingVerificationEmail,
+                        token: otpCode,
+                        type: 'signup'
+                    });
+
+                    if (error) {
+                        throw new Error(error.message);
+                    }
+
+                    if (data.session) {
+                        successMessage.textContent = 'Email verified successfully! Welcome to SocialHub.';
+                        successMessage.style.display = 'block';
+                        
+                        // Hide verify tab and reset form
+                        setTimeout(() => {
+                            document.querySelector('[data-mode="verify"]').style.display = 'none';
+                            authForm.reset();
+                            pendingVerificationEmail = '';
+                            successMessage.style.display = 'none';
+                        }, 2000);
                     }
                 }
             } catch (error) {
@@ -1014,7 +1125,8 @@
                 authError.style.display = 'block';
             } finally {
                 authSubmit.disabled = false;
-                authSubmit.textContent = isLoginMode ? 'Sign In' : 'Create Account';
+                authSubmit.textContent = authMode === 'login' ? 'Sign In' : 
+                                       authMode === 'signup' ? 'Create Account' : 'Verify Code';
             }
         });
 
