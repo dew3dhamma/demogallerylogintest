@@ -233,27 +233,27 @@
     }
 
     /* Modal Styles */
-    .modal {
-        display: none; /* Hidden by default */
-        position: fixed; /* Stay in place */
-        z-index: 200; /* Sit on top */
-        left: 0;
+    .modal-overlay {
+        /* This is the new overlay that should cover the screen */
+        position: fixed;
         top: 0;
-        width: 100%; /* Full width */
-        height: 100%; /* Full height */
-        overflow: auto; /* Enable scroll if needed */
-        background-color: rgba(0, 0, 0, 0.7); /* Black w/ opacity */
-        display: flex; /* Use flex to center content */
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+        display: flex; /* Use flexbox to center content */
         justify-content: center;
         align-items: center;
-        opacity: 0;
+        z-index: 200; /* Ensure it's above other content */
+        /* Initially hidden */
         visibility: hidden;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.3s ease-in-out;
     }
 
-    .modal.show {
-        opacity: 1;
+    .modal-overlay.show {
         visibility: visible;
+        opacity: 1;
     }
 
     .modal-content {
@@ -265,14 +265,14 @@
         position: relative;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
         text-align: center;
-        transform: translateY(-20px);
-        opacity: 0;
-        transition: transform 0.3s ease, opacity 0.3s ease;
+        transform: translateY(-20px); /* Initial position for animation */
+        opacity: 0; /* Initial opacity for animation */
+        transition: transform 0.3s ease-out, opacity 0.3s ease-out;
     }
 
-    .modal.show .modal-content {
-        transform: translateY(0);
-        opacity: 1;
+    .modal-overlay.show .modal-content {
+        transform: translateY(0); /* Animate to original position */
+        opacity: 1; /* Animate to full opacity */
     }
 
     .modal-content h2 {
@@ -464,7 +464,7 @@
     </section>
   </main>
 
-  <div class="modal" id="auth-modal">
+  <div class="modal-overlay" id="auth-modal-overlay">
     <div class="modal-content">
       <span class="close-button" id="auth-close-button">&times;</span>
       <h2 id="auth-modal-title">Sign In</h2>
@@ -487,11 +487,12 @@
   <script>
     // Supabase Configuration
     const supabaseUrl = "https://dhgpoehnpehpxdghucpu.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZ3BvZWhucGVocHhkZ2h1Y3B1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MDEwODIsImV4cCI6MjA2OTA3NzA4Mn0.KKRREv9U15pkaEjknhsDrLeuWM8Qa3PdSS7DkuXKrTI";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZ3BvZWhucGVocHhkZ2h1Y3B1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MDEwODIsImV4cCI6MjA2OTA3NzA4Mn0.KKRREv9U15pcuKIKvTI"; // Verify this key if issues persist
     const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
 
     // DOM Elements
-    const authModal = document.getElementById('auth-modal');
+    // !!! IMPORTANT: Renamed authModal to authModalOverlay as per CSS
+    const authModalOverlay = document.getElementById('auth-modal-overlay');
     const authCloseButton = document.getElementById('auth-close-button');
     const profileLink = document.getElementById('profile-link');
     const authModalTitle = document.getElementById('auth-modal-title');
@@ -518,7 +519,7 @@
      */
     function toggleAuthModal(show) {
         if (show) {
-            authModal.classList.add('show');
+            authModalOverlay.classList.add('show');
             // Reset form fields and mode when opening
             authEmailInput.value = '';
             authPasswordInput.value = '';
@@ -529,7 +530,7 @@
             authSubmitButton.textContent = 'Sign In';
             authToggleLink.textContent = "Don't have an account? Sign Up";
         } else {
-            authModal.classList.remove('show');
+            authModalOverlay.classList.remove('show');
         }
     }
 
@@ -684,11 +685,11 @@
             if (user.email === ADMIN_EMAIL) {
                 uploadSection.classList.remove('hidden'); // Show upload section for admin
                 adminInfoMessage.textContent = 'Welcome, Admin! You can upload images.';
-                adminInfoMessage.style.color = '#00bcd4';
+                adminInfoMessage.style.color = '#00bcd4'; // Teal color for admin message
             } else {
                 uploadSection.classList.add('hidden'); // Hide upload section for non-admin
-                adminInfoMessage.textContent = 'Logged in. Only admin can upload images.';
-                adminInfoMessage.style.color = '#ffeb3b';
+                adminInfoMessage.textContent = 'Logged in. Only admin can upload images.'; // Specific message
+                adminInfoMessage.style.color = '#ffeb3b'; // Yellow warning color
             }
             adminInfoMessage.classList.remove('hidden'); // Always show info message if logged in
         } else {
@@ -703,7 +704,7 @@
             authPasswordInput.value = '';
             authPasswordInput.classList.remove('hidden'); // Show password input
             adminInfoMessage.textContent = 'Only admin can upload images.'; // Default warning message
-            adminInfoMessage.style.color = '#ffeb3b';
+            adminInfoMessage.style.color = '#ffeb3b'; // Yellow warning color
             adminInfoMessage.classList.remove('hidden'); // Show warning when logged out
         }
     }
@@ -721,6 +722,13 @@
 
     // Close button for auth modal
     authCloseButton.addEventListener('click', () => toggleAuthModal(false));
+
+    // Allow closing modal by clicking outside the content
+    authModalOverlay.addEventListener('click', (e) => {
+        if (e.target === authModalOverlay) {
+            toggleAuthModal(false);
+        }
+    });
 
     // Toggle between Sign In/Sign Up modes
     authToggleLink.addEventListener('click', toggleAuthMode);
