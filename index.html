@@ -4,208 +4,484 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Modern Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    /* Global Styles */
+    /* Global Reset & Base Styles */
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
+
     body {
-      background-color: #121212;
-      color: white;
-      padding: 0;
+        font-family: 'Montserrat', sans-serif;
+        background-color: #1a1a2e; /* Darker blue-purple */
+        color: #e0e0e0; /* Light gray text */
+        line-height: 1.6;
+        overflow-x: hidden; /* Prevent horizontal scroll */
     }
 
-    /* Navbar Styles */
-    nav {
-      background-color: #1f1f1f;
-      display: flex;
-      justify-content: space-between;
-      padding: 1rem 2rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    }
-    nav ul {
-      list-style: none;
-      display: flex;
-      gap: 1.5rem;
-    }
-    nav ul li {
-      cursor: pointer;
-      transition: color 0.3s ease;
-    }
-    nav ul li:hover {
-      color: #03DAC5;
-    }
-    nav ul li.active {
-      font-weight: bold;
-      color: #03DAC5;
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+        color: #e0e0e0;
+        margin-bottom: 1rem;
+        font-weight: 700;
     }
 
-    /* Gallery Styles */
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
-      padding: 2rem;
-    }
-    .gallery img {
-      width: 100%;
-      height: 200px; /* Fixed height for consistency */
-      object-fit: cover; /* Ensures images cover the area without distortion */
-      border-radius: 10px;
-      transition: transform 0.2s ease-in-out;
-    }
-    .gallery img:hover {
-      transform: scale(1.02);
+    p {
+        margin-bottom: 1rem;
     }
 
-    /* Upload Box Styles */
-    .upload-box {
-      display: none; /* Controlled by JavaScript */
-      padding: 2rem;
-      text-align: center;
-      background-color: #1f1f1f;
-      margin: 1rem 2rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    }
-    .upload-box input {
-      padding: 0.75rem;
-      width: 60%;
-      max-width: 400px;
-      border: 1px solid #333;
-      background-color: #2a2a2a;
-      color: white;
-      border-radius: 5px;
-      outline: none;
-    }
-    .upload-box button {
-      padding: 0.75rem 1.5rem;
-      background: #03DAC5;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-left: 1rem;
-      transition: background 0.3s ease;
-    }
-    .upload-box button:hover {
-      background: #02a392;
+    a {
+        color: #8c7ae6; /* Purple link color */
+        text-decoration: none;
+        transition: color 0.3s ease;
     }
 
-    /* Auth Container Styles */
-    .auth-container {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #1e1e1e;
-      padding: 2rem;
-      border-radius: 10px;
-      display: none; /* Controlled by JavaScript */
-      flex-direction: column;
-      gap: 1.25rem;
-      z-index: 999;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.7);
-      min-width: 300px;
-      max-width: 90%;
+    a:hover {
+        color: #a491f2;
     }
-    .auth-container input {
-      padding: 0.75rem;
-      width: 100%;
-      border: 1px solid #333;
-      background-color: #2a2a2a;
-      color: white;
-      border-radius: 5px;
-      outline: none;
+
+    /* Buttons */
+    button {
+        background-color: #00bcd4; /* Teal */
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        -webkit-appearance: none; /* For consistent styling across browsers */
     }
-    .auth-container button {
-      padding: 0.75rem;
-      width: 100%;
-      background: #03DAC5;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s ease;
+
+    button:hover {
+        background-color: #0097a7;
+        transform: translateY(-2px);
     }
-    .auth-container button:hover {
-      background: #02a392;
+
+    button:active {
+        transform: translateY(0);
     }
+
+    /* Form Elements */
+    input[type="text"],
+    input[type="url"],
+    input[type="email"],
+    input[type="password"] {
+        background-color: #2a2a3e; /* Slightly lighter dark blue */
+        border: 1px solid #4a4a6a;
+        color: #e0e0e0;
+        padding: 0.8rem 1rem;
+        border-radius: 5px;
+        font-size: 1rem;
+        width: 100%;
+        margin-bottom: 1rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+        border-color: #00bcd4;
+        box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.3);
+        outline: none;
+    }
+
+    /* Utility Classes */
+    .hidden {
+        display: none !important;
+    }
+
+    /* Layout Container */
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    /* Navbar */
+    .navbar {
+        background-color: #161625; /* Even darker blue for navbar */
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .navbar-brand .logo {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #00bcd4; /* Teal for logo */
+        letter-spacing: 1px;
+    }
+
+    .navbar-nav ul {
+        list-style: none;
+        display: flex;
+        gap: 2rem;
+    }
+
+    .navbar-nav .nav-link {
+        color: #e0e0e0;
+        font-weight: 600;
+        font-size: 1.1rem;
+        position: relative;
+        padding-bottom: 5px;
+    }
+
+    .navbar-nav .nav-link::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        height: 2px;
+        background-color: #00bcd4;
+        transition: width 0.3s ease;
+    }
+
+    .navbar-nav .nav-link:hover::after,
+    .navbar-nav .nav-link.active::after {
+        width: 100%;
+    }
+
+    /* Upload Section */
+    .upload-section {
+        background-color: #1f1f3a; /* Dark blue-purple */
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        display: none; /* Hidden by default, controlled by JS */
+        text-align: center;
+    }
+
+    .upload-section h2 {
+        color: #00bcd4;
+        margin-bottom: 1.5rem;
+    }
+
+    .upload-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .upload-form input {
+        max-width: 500px;
+        margin-bottom: 0; /* Override default input margin */
+    }
+
+    .upload-form button {
+        width: auto;
+        padding: 0.8rem 2.5rem;
+    }
+
+    /* Gallery Section */
+    .gallery-section {
+        padding: 2rem 0;
+    }
+
+    .gallery-section h2 {
+        text-align: center;
+        color: #e0e0e0;
+        margin-bottom: 2rem;
+    }
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Larger minimum size */
+        gap: 1.5rem;
+    }
+
+    .gallery-item {
+        background-color: #1f1f3a;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .gallery-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .gallery-item img {
+        width: 100%;
+        height: 220px; /* Consistent image height */
+        object-fit: cover;
+        display: block;
+    }
+
+    .gallery-status-message {
+        text-align: center;
+        margin-top: 2rem;
+        font-style: italic;
+        color: #b0b0b0;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 200; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0, 0, 0, 0.7); /* Black w/ opacity */
+        display: flex; /* Use flex to center content */
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal-content {
+        background-color: #2a2a3e; /* Darker background for modal */
+        padding: 2.5rem 2rem;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 450px;
+        position: relative;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+        text-align: center;
+        transform: translateY(-20px);
+        opacity: 0;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .modal.show .modal-content {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    .modal-content h2 {
+        color: #00bcd4;
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-warning {
+        color: #ffeb3b; /* Yellow warning */
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .close-button {
+        color: #aaa;
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        font-size: 2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: #f44336; /* Red on hover */
+    }
+
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .auth-form input {
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-form button {
+        margin-top: 1rem;
+        width: 100%;
+    }
+
     .auth-toggle {
-      color: #aaa;
-      cursor: pointer;
-      text-align: center;
-      font-size: 0.9rem;
-      transition: color 0.3s ease;
+        margin-top: 1.5rem;
+        font-size: 0.95rem;
     }
-    .auth-toggle:hover {
-      color: #03DAC5;
+
+    .auth-toggle span {
+        color: #8c7ae6;
+        cursor: pointer;
+        transition: color 0.3s ease;
     }
-    .auth-close {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-      color: #ff4d4d;
-      font-size: 1.5rem;
-      line-height: 1;
-      transition: color 0.3s ease;
+
+    .auth-toggle span:hover {
+        color: #a491f2;
     }
-    .auth-close:hover {
-      color: #ff0000;
+
+    .logout-button {
+        background-color: #f44336; /* Red for logout */
+        margin-top: 1.5rem;
+        width: 100%;
+        display: none; /* Hidden by default */
     }
-    .warning {
-      color: yellow;
-      font-size: 0.9rem;
-      text-align: center;
-      margin-bottom: 0.5rem;
+
+    .logout-button:hover {
+        background-color: #d32f2f;
     }
-    .logout-btn {
-      display: none; /* Hidden by default, shown when user is logged in */
-      padding: 0.75rem;
-      background: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 0.5rem; /* Adjusted margin */
-      transition: background 0.3s ease;
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .navbar {
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .navbar-nav ul {
+            flex-direction: column;
+            gap: 0.8rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .navbar-nav .nav-link {
+            font-size: 1rem;
+            display: block;
+            padding: 0.5rem 0;
+        }
+
+        .container {
+            margin: 1rem auto;
+            padding: 0 0.8rem;
+        }
+
+        .upload-section {
+            padding: 1.5rem;
+        }
+
+        .upload-form {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .upload-form input,
+        .upload-form button {
+            width: 100%;
+            margin-left: 0;
+        }
+
+        .gallery-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .gallery-item img {
+            height: 150px;
+        }
+
+        .modal-content {
+            padding: 1.5rem;
+        }
+
+        .close-button {
+            font-size: 1.5rem;
+            top: 10px;
+            right: 15px;
+        }
     }
-    .logout-btn:hover {
-      background: #c82333;
+
+    @media (max-width: 480px) {
+        .navbar-brand .logo {
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav ul {
+            gap: 0.5rem;
+        }
+
+        .gallery-grid {
+            grid-template-columns: 1fr; /* Single column on very small screens */
+        }
+
+        .gallery-item img {
+            height: 200px; /* Back to slightly larger height for single column */
+        }
+
+        .modal-content {
+            padding: 1.2rem;
+        }
+
+        .auth-form button, .logout-button {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <div><strong>MyGallery</strong></div>
-    <ul>
-      <li>Home</li>
-      <li class="active">Gallery</li>
-      <li>Contact</li>
-      <li id="profile-link">Profile</li>
-    </ul>
-  </nav>
+  <header class="navbar">
+    <div class="navbar-brand">
+      <span class="logo">MyGallery</span>
+    </div>
+    <nav class="navbar-nav">
+      <ul>
+        <li><a href="#" class="nav-link active">Gallery</a></li>
+        <li><a href="#" class="nav-link">About</a></li>
+        <li><a href="#" class="nav-link">Contact</a></li>
+        <li><a href="#" class="nav-link" id="profile-link">Profile</a></li>
+      </ul>
+    </nav>
+  </header>
 
-  <div class="upload-box" id="upload-box">
-    <input type="text" id="image-url" placeholder="Enter image URL" />
-    <button id="upload-btn">Upload</button>
-  </div>
+  <main class="container">
+    <section class="upload-section" id="upload-section">
+      <h2>Upload New Image</h2>
+      <div class="upload-form">
+        <input type="url" id="image-url-input" placeholder="Paste image URL here..." required />
+        <button id="upload-image-btn">Upload Image</button>
+      </div>
+    </section>
 
-  <div class="gallery" id="gallery"></div>
+    <section class="gallery-section">
+      <h2>Explore Images</h2>
+      <div class="gallery-grid" id="gallery-grid">
+        </div>
+      <p id="gallery-status" class="gallery-status-message"></p>
+    </section>
+  </main>
 
-  <div class="auth-container" id="auth-container">
-    <div class="auth-close" id="auth-close-btn">✖</div>
-    <div class="warning" id="admin-warning">Admin only access for upload features.</div>
-    <input type="email" id="auth-email" placeholder="Email" />
-    <input type="password" id="auth-password" placeholder="Password" />
-    <button id="auth-action-btn">Sign In</button>
-    <div class="auth-toggle" id="auth-toggle-btn">Don't have an account? Sign Up</div>
-    <button class="logout-btn" id="logout-btn">Log Out</button>
+  <div class="modal" id="auth-modal">
+    <div class="modal-content">
+      <span class="close-button" id="auth-close-button">&times;</span>
+      <h2 id="auth-modal-title">Sign In</h2>
+      <p class="modal-warning" id="admin-info-message">Only admin can upload images.</p>
+
+      <form class="auth-form">
+        <input type="email" id="auth-email-input" placeholder="Email" required />
+        <input type="password" id="auth-password-input" placeholder="Password" required />
+        <button type="submit" id="auth-submit-btn">Sign In</button>
+      </form>
+
+      <p class="auth-toggle">
+        <span id="auth-toggle-link">Don't have an account? Sign Up</span>
+      </p>
+
+      <button class="logout-button" id="logout-button">Log Out</button>
+    </div>
   </div>
 
   <script>
@@ -215,239 +491,262 @@
     const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
 
     // DOM Elements
-    const galleryContainer = document.getElementById('gallery');
-    const uploadBox = document.getElementById('upload-box');
-    const imageUrlInput = document.getElementById('image-url');
-    const uploadButton = document.getElementById('upload-btn');
-    const authContainer = document.getElementById('auth-container');
-    const authCloseBtn = document.getElementById('auth-close-btn');
-    const authEmailInput = document.getElementById('auth-email');
-    const authPasswordInput = document.getElementById('auth-password');
-    const authActionButton = document.getElementById('auth-action-btn');
-    const authToggleButton = document.getElementById('auth-toggle-btn');
+    const authModal = document.getElementById('auth-modal');
+    const authCloseButton = document.getElementById('auth-close-button');
     const profileLink = document.getElementById('profile-link');
-    const logoutButton = document.getElementById('logout-btn');
-    const adminWarning = document.getElementById('admin-warning');
+    const authModalTitle = document.getElementById('auth-modal-title');
+    const authEmailInput = document.getElementById('auth-email-input');
+    const authPasswordInput = document.getElementById('auth-password-input');
+    const authSubmitButton = document.getElementById('auth-submit-btn');
+    const authToggleLink = document.getElementById('auth-toggle-link');
+    const logoutButton = document.getElementById('logout-button');
+    const adminInfoMessage = document.getElementById('admin-info-message');
 
+    const uploadSection = document.getElementById('upload-section');
+    const imageUrlInput = document.getElementById('image-url-input');
+    const uploadImageButton = document.getElementById('upload-image-btn');
+    const galleryGrid = document.getElementById('gallery-grid');
+    const galleryStatusMessage = document.getElementById('gallery-status');
 
     // State Variables
-    let isSignupMode = false; // true for signup, false for signin
-    const ADMIN_EMAIL = "mcmaksonchakma@gmail.com"; // The specific admin email for upload access
+    let isSignupMode = false;
+    const ADMIN_EMAIL = "mcmaksonchakma@gmail.com"; // Your admin email
 
     /**
-     * Toggles the visibility of the authentication container.
-     * @param {boolean} show - True to show, false to hide.
+     * Manages the visibility of the authentication modal.
+     * @param {boolean} show - True to show the modal, false to hide.
      */
-    function toggleAuthVisibility(show) {
-      authContainer.style.display = show ? 'flex' : 'none';
-      if (!show) {
-        // Clear input fields and reset mode when closing the auth box
-        authEmailInput.value = '';
-        authPasswordInput.value = '';
-        authPasswordInput.style.display = 'block'; // Ensure password input is visible for login/signup
-        authEmailInput.readOnly = false; // Ensure email input is editable
-        isSignupMode = false; // Reset to sign-in mode
-        authActionButton.innerText = 'Sign In';
-        authToggleButton.innerText = "Don't have an account? Sign Up";
-      }
+    function toggleAuthModal(show) {
+        if (show) {
+            authModal.classList.add('show');
+            // Reset form fields and mode when opening
+            authEmailInput.value = '';
+            authPasswordInput.value = '';
+            authPasswordInput.classList.remove('hidden'); // Ensure visible
+            authEmailInput.readOnly = false; // Ensure editable
+            isSignupMode = false;
+            authModalTitle.textContent = 'Sign In';
+            authSubmitButton.textContent = 'Sign In';
+            authToggleLink.textContent = "Don't have an account? Sign Up";
+        } else {
+            authModal.classList.remove('show');
+        }
     }
 
     /**
-     * Toggles between Sign In and Sign Up modes for the auth container.
+     * Toggles between Sign In and Sign Up modes within the authentication modal.
      */
     function toggleAuthMode() {
-      isSignupMode = !isSignupMode;
-      authActionButton.innerText = isSignupMode ? 'Sign Up' : 'Sign In';
-      authToggleButton.innerText = isSignupMode ? 'Already have an account? Sign In' : "Don't have an account? Sign Up";
-      // Clear password field when toggling mode for security
-      authPasswordInput.value = '';
+        isSignupMode = !isSignupMode;
+        authModalTitle.textContent = isSignupMode ? 'Sign Up' : 'Sign In';
+        authSubmitButton.textContent = isSignupMode ? 'Sign Up' : 'Sign In';
+        authToggleLink.textContent = isSignupMode ? 'Already have an account? Sign In' : "Don't have an account? Sign Up";
+        authPasswordInput.value = ''; // Clear password on mode switch
     }
 
     /**
-     * Authenticates the user (Sign In or Sign Up).
+     * Handles user authentication (Sign In or Sign Up).
+     * @param {Event} event - The form submission event.
      */
-    async function handleAuthAction() {
-      const email = authEmailInput.value.trim();
-      const password = authPasswordInput.value.trim();
+    async function handleAuthSubmit(event) {
+        event.preventDefault(); // Prevent default form submission
+        const email = authEmailInput.value.trim();
+        const password = authPasswordInput.value.trim();
 
-      if (!email || !password) {
-        alert("Please enter both email and password.");
-        return;
-      }
+        if (!email || !password) {
+            alert("Please enter both email and password.");
+            return;
+        }
 
-      let result;
-      if (isSignupMode) {
-        result = await supabase.auth.signUp({ email, password });
-      } else {
-        result = await supabase.auth.signInWithPassword({ email, password });
-      }
+        let authPromise;
+        if (isSignupMode) {
+            authPromise = supabase.auth.signUp({ email, password });
+        } else {
+            authPromise = supabase.auth.signInWithPassword({ email, password });
+        }
 
-      const { data, error } = result;
+        const { data, error } = await authPromise;
 
-      if (error) {
-        alert("Authentication error: " + error.message);
-      } else if (data.user) {
-        alert(`Successfully ${isSignupMode ? 'signed up' : 'signed in'} as ${data.user.email}!`);
-        toggleAuthVisibility(false); // Hide auth container on success
-        // updateAuthUI will be called by the onAuthStateChange listener
-      } else {
-         alert("Authentication failed. Please check your credentials or verify your email (if signed up).");
-      }
+        if (error) {
+            alert("Authentication error: " + error.message);
+        } else if (data.user) {
+            alert(`Successfully ${isSignupMode ? 'signed up' : 'signed in'} as ${data.user.email}!`);
+            toggleAuthModal(false); // Hide modal on success
+            // The onAuthStateChange listener will handle UI updates
+        } else {
+            alert("Authentication failed. Check credentials or verify email (if signed up).");
+        }
     }
 
     /**
-     * Logs out the current user from Supabase.
+     * Logs out the current user.
      */
     async function handleLogout() {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        alert('Error logging out: ' + error.message);
-      } else {
-        alert('You have been logged out.');
-        toggleAuthVisibility(false); // Hide auth container
-        // updateAuthUI (via onAuthStateChange) will handle UI changes
-      }
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            alert('Error logging out: ' + error.message);
+        } else {
+            alert('You have been logged out.');
+            toggleAuthModal(false); // Hide modal
+            // The onAuthStateChange listener will handle UI updates
+        }
     }
 
     /**
      * Loads images from the Supabase 'gallery' table and displays them.
      */
     async function loadGalleryImages() {
-      const { data, error } = await supabase.from('gallery').select('*');
+        galleryStatusMessage.textContent = "Loading images...";
+        galleryStatusMessage.classList.remove('hidden');
+        galleryGrid.innerHTML = ''; // Clear existing images
 
-      if (error) {
-        console.error('Error loading gallery images:', error.message);
-        galleryContainer.innerHTML = '<p style="text-align: center;">Failed to load images. Please try again later.</p>';
-        return;
-      }
+        const { data, error } = await supabase.from('gallery').select('*').order('created_at', { ascending: false }); // Order by newest
 
-      galleryContainer.innerHTML = ''; // Clear existing images
-      if (data.length === 0) {
-        galleryContainer.innerHTML = '<p style="text-align: center;">No images in the gallery yet. Upload one!</p>';
-        return;
-      }
+        if (error) {
+            console.error('Error loading gallery images:', error.message);
+            galleryStatusMessage.textContent = 'Failed to load images. Please try again later.';
+            return;
+        }
 
-      data.forEach(item => {
-        const img = document.createElement('img');
-        img.src = item.url;
-        img.alt = 'Gallery Image'; // Add alt text for accessibility
-        galleryContainer.appendChild(img);
-      });
+        if (data.length === 0) {
+            galleryStatusMessage.textContent = 'No images in the gallery yet. Be the first to upload one!';
+            return;
+        }
+
+        data.forEach(item => {
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item';
+            const img = document.createElement('img');
+            img.src = item.url;
+            img.alt = 'Gallery Image';
+            galleryItem.appendChild(img);
+            galleryGrid.appendChild(galleryItem);
+        });
+        galleryStatusMessage.classList.add('hidden'); // Hide status message if images are loaded
     }
 
     /**
      * Uploads an image URL to the Supabase 'gallery' table.
      */
     async function uploadImage() {
-      const url = imageUrlInput.value.trim();
-      if (!url) {
-        alert("Please enter an image URL.");
-        return;
-      }
+        const url = imageUrlInput.value.trim();
+        if (!url) {
+            alert("Please enter an image URL.");
+            return;
+        }
 
-      // Check if user is logged in AND is admin before allowing upload
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.email !== ADMIN_EMAIL) {
-        alert("You must be logged in as the admin to upload images.");
-        return;
-      }
+        // Client-side validation for URL format (basic)
+        try {
+            new URL(url);
+        } catch (_) {
+            alert("Please enter a valid URL format for the image.");
+            return;
+        }
 
-      const { error } = await supabase.from('gallery').insert([{ url: url }]);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || user.email !== ADMIN_EMAIL) {
+            alert("Authentication required: You must be logged in as the admin to upload images.");
+            return;
+        }
 
-      if (error) {
-        alert('Error uploading image: ' + error.message);
-      } else {
-        imageUrlInput.value = ''; // Clear input field
-        loadGalleryImages(); // Reload gallery to show new image
-        alert('Image uploaded successfully!');
-      }
+        uploadImageButton.disabled = true; // Disable button during upload
+        uploadImageButton.textContent = 'Uploading...';
+
+        const { error } = await supabase.from('gallery').insert([{ url: url }]);
+
+        if (error) {
+            alert('Error uploading image: ' + error.message);
+            console.error('Upload error:', error);
+        } else {
+            imageUrlInput.value = ''; // Clear input field
+            loadGalleryImages(); // Reload gallery to show new image
+            alert('Image uploaded successfully!');
+        }
+        uploadImageButton.disabled = false; // Re-enable button
+        uploadImageButton.textContent = 'Upload Image';
     }
 
     /**
-     * Manages the UI based on the user's authentication status and admin privilege.
-     * This function is called by the auth state change listener and on initial load.
+     * Updates UI elements based on the current user's authentication status and admin privilege.
      * @param {object | null} user - The Supabase user object or null if logged out.
      */
-    function updateAuthUI(user) {
-      if (user) {
-        // User is logged in
-        authActionButton.style.display = 'none'; // Hide signin/signup button
-        authToggleButton.style.display = 'none'; // Hide toggle button
-        logoutButton.style.display = 'block'; // Show logout button
+    function updateUI(user) {
+        if (user) {
+            // Logged in state
+            authSubmitButton.classList.add('hidden'); // Hide signin/signup button
+            authToggleLink.classList.add('hidden'); // Hide toggle link
+            logoutButton.classList.remove('hidden'); // Show logout button
 
-        // Set email input to logged-in user's email and make it read-only
-        authEmailInput.value = user.email;
-        authEmailInput.readOnly = true;
-        authPasswordInput.style.display = 'none'; // Hide password input when logged in
+            authEmailInput.value = user.email;
+            authEmailInput.readOnly = true;
+            authPasswordInput.classList.add('hidden'); // Hide password input when logged in
 
-        if (user.email === ADMIN_EMAIL) {
-          uploadBox.style.display = 'block'; // Show upload box for admin
-          adminWarning.style.display = 'none'; // Hide admin warning for admin
-          adminWarning.innerHTML = 'Admin functions enabled.'; // Optional: change warning text
-          adminWarning.style.color = '#03DAC5'; // Optional: change color
-          adminWarning.style.display = 'block'; // Show it for admin status
+            if (user.email === ADMIN_EMAIL) {
+                uploadSection.classList.remove('hidden'); // Show upload section for admin
+                adminInfoMessage.textContent = 'Welcome, Admin! You can upload images.';
+                adminInfoMessage.style.color = '#00bcd4';
+            } else {
+                uploadSection.classList.add('hidden'); // Hide upload section for non-admin
+                adminInfoMessage.textContent = 'Logged in. Only admin can upload images.';
+                adminInfoMessage.style.color = '#ffeb3b';
+            }
+            adminInfoMessage.classList.remove('hidden'); // Always show info message if logged in
         } else {
-          uploadBox.style.display = 'none'; // Hide upload box for non-admin
-          adminWarning.innerHTML = 'Logged in. Only admin can upload.'; // Specific message
-          adminWarning.style.color = 'yellow';
-          adminWarning.style.display = 'block'; // Show warning for non-admin
+            // Logged out state
+            uploadSection.classList.add('hidden'); // Hide upload section
+            authSubmitButton.classList.remove('hidden'); // Show signin/signup button
+            authToggleLink.classList.remove('hidden'); // Show toggle link
+            logoutButton.classList.add('hidden'); // Hide logout button
+
+            authEmailInput.value = '';
+            authEmailInput.readOnly = false;
+            authPasswordInput.value = '';
+            authPasswordInput.classList.remove('hidden'); // Show password input
+            adminInfoMessage.textContent = 'Only admin can upload images.'; // Default warning message
+            adminInfoMessage.style.color = '#ffeb3b';
+            adminInfoMessage.classList.remove('hidden'); // Show warning when logged out
         }
-      } else {
-        // User is logged out
-        uploadBox.style.display = 'none'; // Hide upload box
-        authActionButton.style.display = 'block'; // Show signin/signup button
-        authToggleButton.style.display = 'block'; // Show toggle button
-        logoutButton.style.display = 'none'; // Hide logout button
-        adminWarning.style.display = 'none'; // Hide warning when logged out
-        authEmailInput.placeholder = "Email"; // Reset placeholder
-        authEmailInput.value = ''; // Clear email input
-        authEmailInput.readOnly = false; // Make email input editable
-        authPasswordInput.value = ''; // Clear password input
-        authPasswordInput.style.display = 'block'; // Show password input
-      }
     }
 
-    // Event Listeners
+    // --- Event Listeners ---
 
-    // **IMPORTANT FIX**: Ensure profile link correctly opens the auth container
+    // Profile link opens auth modal
     profileLink.addEventListener('click', () => {
-      toggleAuthVisibility(true);
-      // Immediately update UI inside auth box based on current user session
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        updateAuthUI(user);
-      });
+        toggleAuthModal(true);
+        // On opening, immediately update the modal's internal UI based on current user
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            updateUI(user);
+        });
     });
 
-    // Close button for auth container
-    authCloseBtn.addEventListener('click', () => toggleAuthVisibility(false));
+    // Close button for auth modal
+    authCloseButton.addEventListener('click', () => toggleAuthModal(false));
 
     // Toggle between Sign In/Sign Up modes
-    authToggleButton.addEventListener('click', toggleAuthMode);
+    authToggleLink.addEventListener('click', toggleAuthMode);
 
-    // Perform authentication action (Sign In/Sign Up)
-    authActionButton.addEventListener('click', handleAuthAction);
+    // Auth form submission (Sign In/Sign Up)
+    authSubmitButton.closest('form').addEventListener('submit', handleAuthSubmit);
 
     // Logout button
     logoutButton.addEventListener('click', handleLogout);
 
     // Upload image button
-    uploadButton.addEventListener('click', uploadImage);
+    uploadImageButton.addEventListener('click', uploadImage);
 
-    // Supabase Auth State Change Listener
-    // This runs whenever the user's authentication state changes (login, logout, refresh, etc.)
+    // Supabase Auth State Change Listener (Crucial for dynamic UI updates)
     supabase.auth.onAuthStateChange((_event, session) => {
-      // session.user will be null if logged out
-      updateAuthUI(session?.user || null);
+        updateUI(session?.user || null); // Call updateUI with the current user object
     });
 
-    // Initial load: This code runs once when the DOM is ready.
+    // --- Initial Page Load Actions ---
     document.addEventListener('DOMContentLoaded', async () => {
-      // Load gallery images immediately so it's public
-      loadGalleryImages();
+        // 1. Load gallery images (publicly visible)
+        await loadGalleryImages();
 
-      // Get the current user session to determine initial UI state for profile/upload
-      const { data: { user } } = await supabase.auth.getUser();
-      updateAuthUI(user); // Update UI based on initial user state (e.g., show/hide upload box)
+        // 2. Determine initial auth state and update UI
+        const { data: { user } } = await supabase.auth.getUser();
+        updateUI(user);
     });
   </script>
 </body>
