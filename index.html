@@ -1,17 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="en">
-<head><script>window.__sb_state = {"forwardPreviewErrors":true};</script><script src="/.webcontainer@runtime.96435430.js"></script><script src="/.webcontainer@wc-api-script.js"></script><script>delete window.__sb_w;document.querySelectorAll('script').forEach(n=>n.remove());</script>
-  <script type="module">
-import RefreshRuntime from "/@react-refresh"
-RefreshRuntime.injectIntoGlobalHook(window)
-window.$RefreshReg$ = () => {}
-window.$RefreshSig$ = () => (type) => type
-window.__vite_plugin_react_preamble_installed__ = true
-</script>
-
-  <script type="module" src="/@vite/client"></script>
-
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialHub - Connect & Share</title>
@@ -239,8 +228,7 @@ window.__vite_plugin_react_preamble_installed__ = true
         .user-avatar img {
             width: 100%;
             height: 100%;
-            -o-object-fit: cover;
-               object-fit: cover;
+            object-fit: cover;
         }
 
         .user-name {
@@ -376,8 +364,7 @@ window.__vite_plugin_react_preamble_installed__ = true
         .post-avatar img {
             width: 100%;
             height: 100%;
-            -o-object-fit: cover;
-               object-fit: cover;
+            object-fit: cover;
         }
 
         .post-user-info h4 {
@@ -408,8 +395,7 @@ window.__vite_plugin_react_preamble_installed__ = true
             border-radius: 12px;
             margin-top: 15px;
             max-height: 400px;
-            -o-object-fit: cover;
-               object-fit: cover;
+            object-fit: cover;
         }
 
         .post-stats {
@@ -488,8 +474,7 @@ window.__vite_plugin_react_preamble_installed__ = true
         .comment-avatar img {
             width: 100%;
             height: 100%;
-            -o-object-fit: cover;
-               object-fit: cover;
+            object-fit: cover;
         }
 
         .comment-content {
@@ -583,6 +568,17 @@ window.__vite_plugin_react_preamble_installed__ = true
         }
 
         /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
@@ -749,15 +745,22 @@ window.__vite_plugin_react_preamble_installed__ = true
         // Handle URL hash parameters and clean up URL
         function handleAuthCallback() {
             const hash = window.location.hash;
+            const search = window.location.search;
+            
+            // Handle both hash-based and query-based auth callbacks
             if (hash && (hash.includes('access_token') || hash.includes('error'))) {
                 console.log('Handling auth callback from URL hash');
-                // Clean the hash from URL to make it look clean
-                setTimeout(() => {
-                    if (window.history && window.history.replaceState) {
-                        window.history.replaceState(null, null, window.location.pathname);
-                    }
-                }, 1000);
+            } else if (search && (search.includes('code=') || search.includes('error='))) {
+                console.log('Handling auth callback from URL search params');
             }
+            
+            // Clean the URL after processing
+            setTimeout(() => {
+                if (window.history && window.history.replaceState) {
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState(null, null, cleanUrl);
+                }
+            }, 2000);
         }
 
         // Initialize app
@@ -801,7 +804,7 @@ window.__vite_plugin_react_preamble_installed__ = true
             supabase.auth.onAuthStateChange(async (event, session) => {
                 console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
                 
-                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
                     if (session?.user) {
                         currentUser = session.user;
                         await loadUserProfile();
@@ -809,13 +812,19 @@ window.__vite_plugin_react_preamble_installed__ = true
                         loadPosts();
                         updateHeader();
                         
+                        // Show success message for email verification
+                        if (event === 'SIGNED_IN' && (window.location.search.includes('code=') || window.location.hash.includes('access_token'))) {
+                            showSuccessMessage('Email verified successfully! Welcome to SocialHub.');
+                        }
+                        
                         // Clean up URL after successful auth
-                        if (window.location.hash) {
+                        if (window.location.hash || window.location.search.includes('code=')) {
                             setTimeout(() => {
                                 if (window.history && window.history.replaceState) {
-                                    window.history.replaceState(null, null, window.location.pathname);
+                                    const cleanUrl = window.location.origin + window.location.pathname;
+                                    window.history.replaceState(null, null, cleanUrl);
                                 }
-                            }, 500);
+                            }, 1000);
                         }
                     }
                 } else if (event === 'SIGNED_OUT') {
@@ -846,6 +855,16 @@ window.__vite_plugin_react_preamble_installed__ = true
                 console.error('Profile load error:', error);
                 await createUserProfile();
             }
+        }
+
+        // Show success message in app header
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-notification';
+            successDiv.textContent = message;
+            successDiv.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #d4edda; color: #155724; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; animation: slideIn 0.3s ease;';
+            document.body.appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 4000);
         }
 
         // Create user profile
@@ -974,11 +993,20 @@ window.__vite_plugin_react_preamble_installed__ = true
                         // Email confirmation required
                         successMessage.textContent = 'Account created! Please check your email to confirm.';
                         successMessage.style.display = 'block';
+                        
+                        // Clear form after showing success message
+                        setTimeout(() => {
+                            authForm.reset();
+                            // Switch to login mode
+                            isLoginMode = true;
+                            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                            document.querySelector('[data-mode="login"]').classList.add('active');
+                            signupFields.style.display = 'none';
+                            authSubmit.textContent = 'Sign In';
+                            successMessage.style.display = 'none';
+                        }, 3000);
                     }
                 }
-
-                // Clear form
-                authForm.reset();
             } catch (error) {
                 console.error('Authentication error:', error);
                 authError.textContent = error.message || 'Authentication failed';
