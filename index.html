@@ -1,6 +1,17 @@
+
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script>window.__sb_state = {"forwardPreviewErrors":true};</script><script src="/.webcontainer@runtime.96435430.js"></script><script src="/.webcontainer@wc-api-script.js"></script><script>delete window.__sb_w;document.querySelectorAll('script').forEach(n=>n.remove());</script>
+  <script type="module">
+import RefreshRuntime from "/@react-refresh"
+RefreshRuntime.injectIntoGlobalHook(window)
+window.$RefreshReg$ = () => {}
+window.$RefreshSig$ = () => (type) => type
+window.__vite_plugin_react_preamble_installed__ = true
+</script>
+
+  <script type="module" src="/@vite/client"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialHub - Connect & Share</title>
@@ -17,6 +28,46 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #333;
+        }
+
+        /* Page Sections */
+        .page-section {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 500;
         }
 
         /* Authentication Styles */
@@ -138,7 +189,6 @@
 
         /* App Layout */
         .app-container {
-            display: none;
             background: #f8f9fa;
             min-height: 100vh;
         }
@@ -189,7 +239,8 @@
         .user-avatar img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            -o-object-fit: cover;
+               object-fit: cover;
         }
 
         .user-name {
@@ -325,7 +376,8 @@
         .post-avatar img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            -o-object-fit: cover;
+               object-fit: cover;
         }
 
         .post-user-info h4 {
@@ -356,7 +408,8 @@
             border-radius: 12px;
             margin-top: 15px;
             max-height: 400px;
-            object-fit: cover;
+            -o-object-fit: cover;
+               object-fit: cover;
         }
 
         .post-stats {
@@ -435,7 +488,8 @@
         .comment-avatar img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            -o-object-fit: cover;
+               object-fit: cover;
         }
 
         .comment-content {
@@ -492,11 +546,6 @@
             border-top: 3px solid #1DA1F2;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         /* Responsive Design */
@@ -560,85 +609,97 @@
     </style>
 </head>
 <body>
-    <!-- Authentication Container -->
-    <div class="auth-container" id="authContainer">
-        <div class="auth-card">
-            <div class="auth-header">
-                <h1>SocialHub</h1>
-                <p>Connect with friends and share your moments</p>
-            </div>
-
-            <div class="auth-tabs">
-                <button class="auth-tab active" data-mode="login">Sign In</button>
-                <button class="auth-tab" data-mode="signup">Sign Up</button>
-            </div>
-
-            <form class="auth-form" id="authForm">
-                <div id="signupFields" style="display: none;">
-                    <div class="form-group">
-                        <input type="text" id="fullName" placeholder="Full Name" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="username" placeholder="Username" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <input type="email" id="email" placeholder="Email" required>
-                </div>
-
-                <div class="form-group">
-                    <input type="password" id="password" placeholder="Password" required>
-                </div>
-
-                <button type="submit" class="auth-submit" id="authSubmit">Sign In</button>
-            </form>
-
-            <div class="auth-error" id="authError"></div>
-            <div class="success-message" id="successMessage"></div>
+    <!-- Loading Screen Section -->
+    <div class="page-section active" id="loadingSection">
+        <div class="loading-screen">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading SocialHub...</div>
         </div>
     </div>
 
-    <!-- Main App Container -->
-    <div class="app-container" id="appContainer">
-        <header class="app-header">
-            <div class="header-content">
-                <div class="logo">SocialHub</div>
-                <div class="user-menu">
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            <img src="https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="User Avatar" id="headerAvatar">
+    <!-- Authentication Section -->
+    <div class="page-section" id="authSection">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>SocialHub</h1>
+                    <p>Connect with friends and share your moments</p>
+                </div>
+
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-mode="login">Sign In</button>
+                    <button class="auth-tab" data-mode="signup">Sign Up</button>
+                </div>
+
+                <form class="auth-form" id="authForm">
+                    <div id="signupFields" style="display: none;">
+                        <div class="form-group">
+                            <input type="text" id="fullName" placeholder="Full Name" required>
                         </div>
-                        <span class="user-name" id="headerUserName">Loading...</span>
+                        <div class="form-group">
+                            <input type="text" id="username" placeholder="Username" required>
+                        </div>
                     </div>
-                    <button class="logout-btn" id="logoutBtn">Logout</button>
-                </div>
-            </div>
-        </header>
 
-        <main class="main-content">
-            <!-- Create Post Section -->
-            <div class="create-post">
-                <div class="create-post-header">
-                    <div class="user-avatar">
-                        <img src="https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="Your Avatar" id="createPostAvatar">
+                    <div class="form-group">
+                        <input type="email" id="email" placeholder="Email" required>
                     </div>
-                    <textarea class="create-post-input" id="createPostInput" placeholder="What's on your mind?" rows="3"></textarea>
-                </div>
-                <div class="create-post-actions">
-                    <button class="post-action-btn">📷 Photo</button>
-                    <button class="post-submit-btn" id="submitPostBtn">Post</button>
-                </div>
-            </div>
 
-            <!-- Posts Feed -->
-            <div class="posts-feed" id="postsFeed">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading posts...</p>
-                </div>
+                    <div class="form-group">
+                        <input type="password" id="password" placeholder="Password" required>
+                    </div>
+
+                    <button type="submit" class="auth-submit" id="authSubmit">Sign In</button>
+                </form>
+
+                <div class="auth-error" id="authError"></div>
+                <div class="success-message" id="successMessage"></div>
             </div>
-        </main>
+        </div>
+    </div>
+
+    <!-- Main App Section -->
+    <div class="page-section" id="appSection">
+        <div class="app-container">
+            <header class="app-header">
+                <div class="header-content">
+                    <div class="logo">SocialHub</div>
+                    <div class="user-menu">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                <img src="https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="User Avatar" id="headerAvatar">
+                            </div>
+                            <span class="user-name" id="headerUserName">Loading...</span>
+                        </div>
+                        <button class="logout-btn" id="logoutBtn">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <!-- Create Post Section -->
+                <div class="create-post">
+                    <div class="create-post-header">
+                        <div class="user-avatar">
+                            <img src="https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" alt="Your Avatar" id="createPostAvatar">
+                        </div>
+                        <textarea class="create-post-input" id="createPostInput" placeholder="What's on your mind?" rows="3"></textarea>
+                    </div>
+                    <div class="create-post-actions">
+                        <button class="post-action-btn">📷 Photo</button>
+                        <button class="post-submit-btn" id="submitPostBtn">Post</button>
+                    </div>
+                </div>
+
+                <!-- Posts Feed -->
+                <div class="posts-feed" id="postsFeed">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading posts...</p>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <script>
@@ -663,8 +724,9 @@
         let likedPosts = new Set();
 
         // DOM elements
-        const authContainer = document.getElementById('authContainer');
-        const appContainer = document.getElementById('appContainer');
+        const loadingSection = document.getElementById('loadingSection');
+        const authSection = document.getElementById('authSection');
+        const appSection = document.getElementById('appSection');
         const authForm = document.getElementById('authForm');
         const authError = document.getElementById('authError');
         const successMessage = document.getElementById('successMessage');
@@ -676,13 +738,20 @@
         const logoutBtn = document.getElementById('logoutBtn');
         const headerUserName = document.getElementById('headerUserName');
 
-        // Function to handle URL hash parameters and clean up URL
+        // Section management
+        function showSection(sectionId) {
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Handle URL hash parameters and clean up URL
         function handleAuthCallback() {
             const hash = window.location.hash;
             if (hash && (hash.includes('access_token') || hash.includes('error'))) {
                 console.log('Handling auth callback from URL hash');
-                // Let Supabase handle the hash automatically
-                // Clear the hash from URL to clean it up
+                // Clean the hash from URL to make it look clean
                 setTimeout(() => {
                     if (window.history && window.history.replaceState) {
                         window.history.replaceState(null, null, window.location.pathname);
@@ -693,33 +762,39 @@
 
         // Initialize app
         async function init() {
-            console.log('Initializing app...');
+            console.log('Initializing SocialHub...');
             
             // Handle auth callback first
             handleAuthCallback();
 
             try {
-                // Check for existing session
-                const { data: { session }, error } = await supabase.auth.getSession();
-                
-                if (error) {
-                    console.error('Session error:', error);
-                    showAuth();
-                    return;
-                }
+                // Show loading for a moment
+                setTimeout(async () => {
+                    // Check for existing session
+                    const { data: { session }, error } = await supabase.auth.getSession();
+                    
+                    if (error) {
+                        console.error('Session error:', error);
+                        showSection('authSection');
+                        return;
+                    }
 
-                console.log('Session check:', session ? 'Found session' : 'No session');
-                
-                if (session?.user) {
-                    currentUser = session.user;
-                    await loadUserProfile();
-                    showApp();
-                } else {
-                    showAuth();
-                }
+                    console.log('Session check:', session ? 'Found session' : 'No session');
+                    
+                    if (session?.user) {
+                        currentUser = session.user;
+                        await loadUserProfile();
+                        showSection('appSection');
+                        loadPosts();
+                        updateHeader();
+                    } else {
+                        showSection('authSection');
+                    }
+                }, 1500); // Show loading for 1.5 seconds
+
             } catch (error) {
                 console.error('Init error:', error);
-                showAuth();
+                showSection('authSection');
             }
 
             // Auth state listener
@@ -730,7 +805,9 @@
                     if (session?.user) {
                         currentUser = session.user;
                         await loadUserProfile();
-                        showApp();
+                        showSection('appSection');
+                        loadPosts();
+                        updateHeader();
                         
                         // Clean up URL after successful auth
                         if (window.location.hash) {
@@ -744,23 +821,9 @@
                 } else if (event === 'SIGNED_OUT') {
                     currentUser = null;
                     currentProfile = null;
-                    showAuth();
+                    showSection('authSection');
                 }
             });
-        }
-
-        // Show authentication screen
-        function showAuth() {
-            authContainer.style.display = 'flex';
-            appContainer.style.display = 'none';
-        }
-
-        // Show main app
-        function showApp() {
-            authContainer.style.display = 'none';
-            appContainer.style.display = 'block';
-            loadPosts();
-            updateHeader();
         }
 
         // Load user profile
