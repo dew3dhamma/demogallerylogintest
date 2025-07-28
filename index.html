@@ -112,6 +112,12 @@
             transform: translateY(-2px);
         }
 
+        .auth-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .auth-error {
             color: #e74c3c;
             margin-top: 15px;
@@ -533,8 +539,14 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .bounce {
@@ -555,7 +567,7 @@
                 <h1>SocialHub</h1>
                 <p>Connect with friends and share your moments</p>
             </div>
-            
+
             <div class="auth-tabs">
                 <button class="auth-tab active" data-mode="login">Sign In</button>
                 <button class="auth-tab" data-mode="signup">Sign Up</button>
@@ -570,11 +582,11 @@
                         <input type="text" id="username" placeholder="Username" required>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <input type="email" id="email" placeholder="Email" required>
                 </div>
-                
+
                 <div class="form-group">
                     <input type="password" id="password" placeholder="Password" required>
                 </div>
@@ -630,10 +642,18 @@
     </div>
 
     <script>
-        // Initialize Supabase
+        // Initialize Supabase with proper configuration
         const supabaseUrl = 'https://gbsghcaxatwlqbgcchze.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdic2doY2F4YXR3bHFiZ2NjaHplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2OTA2MjMsImV4cCI6MjA2OTI2NjYyM30.WwzFyPQd4oBXg-XXt8Gmauj3sCnwnjG5WXcPaDIGIdg';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true,
+                flowType: 'pkce'
+            }
+        });
 
         // Global state
         let currentUser = null;
@@ -656,10 +676,38 @@
         const logoutBtn = document.getElementById('logoutBtn');
         const headerUserName = document.getElementById('headerUserName');
 
+        // Function to handle URL hash parameters and clean up URL
+        function handleAuthCallback() {
+            const hash = window.location.hash;
+            if (hash && (hash.includes('access_token') || hash.includes('error'))) {
+                console.log('Handling auth callback from URL hash');
+                // Let Supabase handle the hash automatically
+                // Clear the hash from URL to clean it up
+                setTimeout(() => {
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState(null, null, window.location.pathname);
+                    }
+                }, 1000);
+            }
+        }
+
         // Initialize app
         async function init() {
+            console.log('Initializing app...');
+            
+            // Handle auth callback first
+            handleAuthCallback();
+
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                // Check for existing session
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('Session error:', error);
+                    showAuth();
+                    return;
+                }
+
                 console.log('Session check:', session ? 'Found session' : 'No session');
                 
                 if (session?.user) {
@@ -673,15 +721,26 @@
                 console.error('Init error:', error);
                 showAuth();
             }
-            
+
             // Auth state listener
             supabase.auth.onAuthStateChange(async (event, session) => {
-                console.log('Auth event:', event);
+                console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
                 
-                if (event === 'SIGNED_IN' && session?.user) {
-                    currentUser = session.user;
-                    await loadUserProfile();
-                    showApp();
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    if (session?.user) {
+                        currentUser = session.user;
+                        await loadUserProfile();
+                        showApp();
+                        
+                        // Clean up URL after successful auth
+                        if (window.location.hash) {
+                            setTimeout(() => {
+                                if (window.history && window.history.replaceState) {
+                                    window.history.replaceState(null, null, window.location.pathname);
+                                }
+                            }, 500);
+                        }
+                    }
                 } else if (event === 'SIGNED_OUT') {
                     currentUser = null;
                     currentProfile = null;
@@ -707,7 +766,7 @@
         // Load user profile
         async function loadUserProfile() {
             if (!currentUser) return;
-            
+
             try {
                 const { data, error } = await supabase
                     .from('profiles')
@@ -729,7 +788,7 @@
         // Create user profile
         async function createUserProfile() {
             if (!currentUser) return;
-            
+
             const username = currentUser.email.split('@')[0];
             const userData = currentUser.user_metadata || {};
             
@@ -737,7 +796,7 @@
                 id: currentUser.id,
                 username: userData.username || username,
                 full_name: userData.full_name || username,
-                avatar_url: `https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop`
+                avatar_url: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'
             };
 
             try {
@@ -759,6 +818,18 @@
         function updateHeader() {
             if (currentProfile) {
                 headerUserName.textContent = currentProfile.full_name || currentProfile.username;
+                
+                // Update avatars
+                const avatars = [
+                    document.getElementById('headerAvatar'),
+                    document.getElementById('createPostAvatar')
+                ];
+                
+                avatars.forEach(avatar => {
+                    if (avatar && currentProfile.avatar_url) {
+                        avatar.src = currentProfile.avatar_url;
+                    }
+                });
             }
         }
 
@@ -784,20 +855,20 @@
         // Auth form submission
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             // Clear previous messages
             authError.style.display = 'none';
             successMessage.style.display = 'none';
-            
+
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
+
             if (!email || !password) {
                 authError.textContent = 'Please fill in all fields';
                 authError.style.display = 'block';
                 return;
             }
-            
+
             authSubmit.disabled = true;
             authSubmit.textContent = isLoginMode ? 'Signing In...' : 'Creating Account...';
 
@@ -808,21 +879,19 @@
                         email,
                         password
                     });
-                    
+
                     if (error) {
                         throw new Error(error.message);
                     }
-                    
-                    // Success - the auth state change listener will handle the rest
                 } else {
                     // Sign up
                     const fullName = document.getElementById('fullName').value;
                     const username = document.getElementById('username').value;
-                    
+
                     if (!fullName || !username) {
                         throw new Error('Please fill in all fields');
                     }
-                    
+
                     const { data, error } = await supabase.auth.signUp({
                         email,
                         password,
@@ -833,20 +902,20 @@
                             }
                         }
                     });
-                    
+
                     if (error) {
                         throw new Error(error.message);
                     }
-                    
+
                     if (data.user && !data.session) {
                         // Email confirmation required
                         successMessage.textContent = 'Account created! Please check your email to confirm.';
                         successMessage.style.display = 'block';
-                    } else if (data.session) {
-                        // Auto sign-in successful - auth state change will handle it
-                        console.log('Auto sign-in successful');
                     }
                 }
+
+                // Clear form
+                authForm.reset();
             } catch (error) {
                 console.error('Authentication error:', error);
                 authError.textContent = error.message || 'Authentication failed';
@@ -889,6 +958,7 @@
                 if (error) throw error;
 
                 createPostInput.value = '';
+                createPostInput.style.height = 'auto';
                 loadPosts(); // Refresh posts
             } catch (error) {
                 console.error('Error creating post:', error);
@@ -959,13 +1029,12 @@
             const timeAgo = getTimeAgo(new Date(post.created_at));
             const isLiked = likedPosts.has(post.id);
             const profile = post.profiles || {};
-            
+
             return `
                 <div class="post fade-in" data-post-id="${post.id}">
                     <div class="post-header">
                         <div class="post-avatar">
-                            <img src="${profile.avatar_url || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'}" 
-                                 alt="${profile.full_name || 'User'}">
+                            <img src="${profile.avatar_url || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'}" alt="${profile.full_name || 'User'}">
                         </div>
                         <div class="post-user-info">
                             <h4>${profile.full_name || 'Unknown User'}</h4>
@@ -973,17 +1042,14 @@
                             <span class="post-time">${timeAgo}</span>
                         </div>
                     </div>
-
                     <div class="post-content">
                         <p>${post.content}</p>
                         ${post.image_url ? `<img src="${post.image_url}" alt="Post image" class="post-image">` : ''}
                     </div>
-
                     <div class="post-stats">
                         <span>${post.likes_count || 0} likes</span>
                         <span>${post.comments_count || 0} comments</span>
                     </div>
-
                     <div class="post-actions">
                         <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" data-post-id="${post.id}">
                             ${isLiked ? '❤️' : '🤍'} Like
@@ -995,7 +1061,6 @@
                             🔄 Share
                         </button>
                     </div>
-
                     <div class="comments-section" id="comments-${post.id}">
                         <div class="comments-list" id="comments-list-${post.id}"></div>
                         <div class="add-comment">
@@ -1012,15 +1077,15 @@
             // Like buttons
             document.querySelectorAll('.like-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const postId = e.target.dataset.postId;
-                    await toggleLike(postId, e.target);
+                    const postId = e.target.closest('.like-btn').dataset.postId;
+                    await toggleLike(postId, e.target.closest('.like-btn'));
                 });
             });
 
             // Comment buttons
             document.querySelectorAll('.comment-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const postId = e.target.dataset.postId;
+                    const postId = e.target.closest('.comment-btn').dataset.postId;
                     toggleComments(postId);
                 });
             });
@@ -1093,7 +1158,7 @@
         function toggleComments(postId) {
             const commentsSection = document.getElementById(`comments-${postId}`);
             const isVisible = commentsSection.style.display === 'block';
-            
+
             if (isVisible) {
                 commentsSection.style.display = 'none';
             } else {
@@ -1106,7 +1171,6 @@
         async function submitComment(postId) {
             const input = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
             const content = input.value.trim();
-            
             if (!content || !currentUser) return;
 
             const submitBtn = document.querySelector(`.comment-submit[data-post-id="${postId}"]`);
@@ -1180,8 +1244,7 @@
                 return `
                     <div class="comment">
                         <div class="comment-avatar">
-                            <img src="${profile.avatar_url || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'}" 
-                                 alt="${profile.full_name || 'User'}">
+                            <img src="${profile.avatar_url || 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop'}" alt="${profile.full_name || 'User'}">
                         </div>
                         <div class="comment-content">
                             <div class="comment-author">${profile.full_name || 'Unknown User'}</div>
