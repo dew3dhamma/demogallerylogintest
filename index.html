@@ -757,10 +757,11 @@
             // Clean the URL after processing
             setTimeout(() => {
                 if (window.history && window.history.replaceState) {
-                    const cleanUrl = window.location.origin + window.location.pathname;
+                    // For GitHub Pages, ensure we keep the repository path
+                    const cleanUrl = window.location.origin + '/index.html';
                     window.history.replaceState(null, null, cleanUrl);
                 }
-            }, 2000);
+            }, 3000);
         }
 
         // Initialize app
